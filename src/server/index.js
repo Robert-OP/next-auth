@@ -57,7 +57,17 @@ async function NextAuthHandler (req, res, userOptions) {
     } = req.query
 
     // @todo refactor all existing references to baseUrl and basePath
-    const { basePath, baseUrl } = parseUrl(process.env.NEXTAUTH_URL || process.env.VERCEL_URL)
+    // const { basePath, baseUrl } = parseUrl(process.env.NEXTAUTH_URL || process.env.VERCEL_URL)
+    // @todo need to check for whitelisted domains in __NEXTAUTH.domains
+    let multiTenantURL = null
+    if (process.env.MULTITENANT == "true") {
+      let protocol = 'http'
+      if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')) {
+        protocol = 'https'
+      }
+      multiTenantURL = protocol + "://" + req.headers.host
+    }
+    const { basePath, baseUrl } = parseUrl(multiTenantURL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL)
 
     const cookies = {
       ...cookie.defaultCookies(userOptions.useSecureCookies || baseUrl.startsWith('https://')),

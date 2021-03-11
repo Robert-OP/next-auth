@@ -372,14 +372,14 @@ function _apiBaseUrl (req) {
 
     // Return absolute path when called server side
     // return `${__NEXTAUTH.baseUrlServer}${__NEXTAUTH.basePathServer}`
-    // TODO need to check for whitelisted domains in __NEXTAUTH.domains
-    if(req && __NEXTAUTH.multiTenant) {
+    // @todo need to check for whitelisted domains in __NEXTAUTH.domains
+    if (req && __NEXTAUTH.multiTenant) {
       let protocol = 'http'
-      if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
+      if ((req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')) {
         protocol = 'https'
       }
       return protocol + "://" +`${req.headers.host}${__NEXTAUTH.basePath}`
-    } else if(__NEXTAUTH.multiTenant) {
+    } else if (__NEXTAUTH.multiTenant) {
       logger.warn('found an instance of multitenant without a req')
     } else {
       return `${__NEXTAUTH.baseUrl}${__NEXTAUTH.basePath}`
