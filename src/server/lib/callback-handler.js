@@ -13,7 +13,7 @@ import dispatchEvent from '../lib/dispatch-event'
  * done prior to this handler being called to avoid additonal complexity in this
  * handler.
  */
-export default async function callbackHandler (sessionToken, profile, providerAccount, options) {
+export default async function callbackHandler (sessionToken, profile, providerAccount, options, req) {
   // Input validation
   if (!profile) throw new Error('Missing profile')
   if (!providerAccount?.id || !providerAccount.type) throw new Error('Missing or invalid provider account')
@@ -97,7 +97,7 @@ export default async function callbackHandler (sessionToken, profile, providerAc
       // Create user account if there isn't one for the email address already
       const currentDate = new Date()
       user = await createUser({ ...profile, emailVerified: currentDate })
-      await dispatchEvent(events.createUser, user)
+      await dispatchEvent(events.createUser, user, req)
       isNewUser = true
     }
 

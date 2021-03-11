@@ -7,6 +7,6 @@ export type EventType=
   | 'session'
   | 'error'
 
-export type EventCallback = (message: any) => Promise<void>
+export type EventCallback = (message: any, req: any) => Promise<void>
 
 export type EventsOptions = Partial<Record<EventType, EventCallback>>

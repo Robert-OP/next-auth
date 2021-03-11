@@ -176,7 +176,7 @@ export default async function callback (req, res) {
       }
 
       // Sign user in
-      const { user, session, isNewUser } = await callbackHandler(sessionToken, profile, account, req.options)
+      const { user, session, isNewUser } = await callbackHandler(sessionToken, profile, account, req.options, req)
 
       if (useJwtSession) {
         const defaultJwtPayload = {
