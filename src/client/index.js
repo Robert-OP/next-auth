@@ -18,14 +18,17 @@ import parseUrl from '../lib/parse-url'
 //    relative URLs are valid in that context and so defaults to empty.
 // 2. When invoked server side the value is picked up from an environment
 //    variable and defaults to 'http://localhost:3000'.
+const multiTenant = process.env.MULTITENANT === "true"
 /** @type {import(".").NextAuthConfig} */
 const __NEXTAUTH = {
   baseUrl: parseUrl(process.env.NEXTAUTH_URL || process.env.VERCEL_URL).baseUrl,
   basePath: parseUrl(process.env.NEXTAUTH_URL).basePath,
   baseUrlServer: parseUrl(process.env.NEXTAUTH_URL_INTERNAL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL).baseUrl,
   basePathServer: parseUrl(process.env.NEXTAUTH_URL_INTERNAL || process.env.NEXTAUTH_URL).basePath,
-  keepAlive: 0,
   clientMaxAge: 0,
+  domains: [],
+  keepAlive: 0,
+  multiTenant,
   // Properties starting with _ are used for tracking internal app state
   _clientLastSync: 0,
   _clientSyncTimer: null,
@@ -299,10 +302,12 @@ export async function signOut (options = {}) {
 // method is being left in as an alternative, that will be helpful if/when we
 // expose a vanilla JavaScript version that doesn't depend on React.
 /** @type {import(".").SetOptions} */
-export function setOptions ({ baseUrl, basePath, clientMaxAge, keepAlive } = {}) {
+export function setOptions ({ baseUrl, basePath, clientMaxAge, domains, keepAlive, multiTenant } = {}) {
   if (baseUrl) __NEXTAUTH.baseUrl = baseUrl
   if (basePath) __NEXTAUTH.basePath = basePath
   if (clientMaxAge) __NEXTAUTH.clientMaxAge = clientMaxAge
+  if (domains) __NEXTAUTH.domains = domains
+  if (multiTenant) __NEXTAUTH.domains = multiTenant
   if (keepAlive) {
     __NEXTAUTH.keepAlive = keepAlive
     if (typeof window === 'undefined') return
@@ -347,7 +352,7 @@ export function Provider ({ children, session, options }) {
  */
 async function _fetchData (path, { ctx, req = ctx?.req } = {}) {
   try {
-    const baseUrl = await _apiBaseUrl()
+    const baseUrl = await _apiBaseUrl(req)
     const options = req ? { headers: { cookie: req.headers.cookie } } : {}
     const res = await fetch(`${baseUrl}/${path}`, options)
     const data = await res.json()
@@ -358,15 +363,27 @@ async function _fetchData (path, { ctx, req = ctx?.req } = {}) {
   }
 }
 
-function _apiBaseUrl () {
+function _apiBaseUrl (req) {
   if (typeof window === 'undefined') {
     // NEXTAUTH_URL should always be set explicitly to support server side calls - log warning if not set
-    if (!process.env.NEXTAUTH_URL) {
+    if (__NEXTAUTH.multiTenant && !process.env.NEXTAUTH_URL) {
       logger.warn('NEXTAUTH_URL', 'NEXTAUTH_URL environment variable not set')
     }
 
     // Return absolute path when called server side
-    return `${__NEXTAUTH.baseUrlServer}${__NEXTAUTH.basePathServer}`
+    // return `${__NEXTAUTH.baseUrlServer}${__NEXTAUTH.basePathServer}`
+    // TODO need to check for whitelisted domains in __NEXTAUTH.domains
+    if(req && __NEXTAUTH.multiTenant) {
+      let protocol = 'http'
+      if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
+        protocol = 'https'
+      }
+      return protocol + "://" +`${req.headers.host}${__NEXTAUTH.basePath}`
+    } else if(__NEXTAUTH.multiTenant) {
+      logger.warn('found an instance of multitenant without a req')
+    } else {
+      return `${__NEXTAUTH.baseUrl}${__NEXTAUTH.basePath}`
+    }
   }
   // Return relative path when called client side
   return __NEXTAUTH.basePath
