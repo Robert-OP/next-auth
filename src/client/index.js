@@ -18,7 +18,7 @@ import parseUrl from '../lib/parse-url'
 //    relative URLs are valid in that context and so defaults to empty.
 // 2. When invoked server side the value is picked up from an environment
 //    variable and defaults to 'http://localhost:3000'.
-const multiTenant = process.env.MULTITENANT === "true"
+const multiTenant = process.env.MULTI_TENANT === "true"
 /** @type {import(".").NextAuthConfig} */
 const __NEXTAUTH = {
   baseUrl: parseUrl(process.env.NEXTAUTH_URL || process.env.VERCEL_URL).baseUrl,
