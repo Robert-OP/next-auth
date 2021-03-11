@@ -43,7 +43,7 @@ export async function redirect (url, baseUrl) {
  * @param  {object} token    JSON Web Token (if enabled)
  * @return {Promise<object>} Session that will be returned to the client
  */
-export async function session (session) {
+export async function session (session, req) {
   return session
 }
 
